@@ -22,10 +22,6 @@ A simple and responsive web app for tracking personal finances — built with **
 - Basic form validation
 - Fully responsive UI
 
-## 📸 Screenshots
-
-_Add a screenshot or two here if you want — or skip for now._
-
 ## 🛠️ Getting Started Locally
 
 ```bash
