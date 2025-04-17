@@ -46,13 +46,6 @@ A simple and intuitive web app for tracking personal finances — built with **N
 
 ---
 
-## 📸 Screenshots
-
-> _Add screenshots here if you'd like_  
-> _(Example: dashboard, transaction form, charts, etc.)_
-
----
-
 ## 🧑‍💻 Getting Started (Local Development)
 
 ```bash
