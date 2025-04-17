@@ -31,6 +31,13 @@ export default function TransactionTracker() {
   });
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
+  const [budgets, setBudgets] = useState({
+    Food: 0,
+    Travel: 0,
+    Rent: 0,
+    Shopping: 0,
+    Misc: 0,
+  });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -50,7 +57,6 @@ export default function TransactionTracker() {
     }
 
     if (isEditing) {
-      // Update existing transaction
       const updatedTxns = transactions.map((tx) =>
         tx.id === editId ? { ...form, id: editId } : tx
       );
@@ -58,7 +64,6 @@ export default function TransactionTracker() {
       setIsEditing(false);
       setEditId(null);
     } else {
-      // Add new transaction
       const newTransaction = {
         ...form,
         id: Date.now(),
@@ -103,6 +108,25 @@ export default function TransactionTracker() {
     });
     return Object.entries(grouped).map(([month, total]) => ({ month, total }));
   };
+
+  const getCategorySpending = () => {
+    const totals = {};
+    for (const category of Object.keys(budgets)) {
+      totals[category] = transactions
+        .filter((tx) => tx.category === category)
+        .reduce((sum, tx) => sum + Number(tx.amount), 0);
+    }
+    return totals;
+  };
+
+  const handleBudgetChange = (category, value) => {
+    setBudgets((prev) => ({
+      ...prev,
+      [category]: Number(value),
+    }));
+  };
+
+  const categorySpending = getCategorySpending();
 
   return (
     <div className="max-w-2xl mx-auto mt-8 space-y-8">
@@ -183,6 +207,50 @@ export default function TransactionTracker() {
               )}
             </div>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Budgets Section */}
+      <Card>
+        <CardContent className="p-6 space-y-4">
+          <h2 className="text-xl font-bold">Set Monthly Budgets</h2>
+          {Object.entries(budgets).map(([category, budget]) => (
+            <div key={category} className="flex justify-between items-center">
+              <Label>{category}</Label>
+              <Input
+                type="number"
+                value={budget}
+                onChange={(e) => handleBudgetChange(category, e.target.value)}
+                className="w-32"
+                placeholder="₹"
+              />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* Budget Overview */}
+      <Card>
+        <CardContent className="p-6 space-y-2">
+          <h2 className="text-xl font-bold">Budget Overview</h2>
+          {Object.keys(budgets).map((category) => {
+            const spent = categorySpending[category];
+            const budget = budgets[category];
+            const remaining = budget - spent;
+            const over = remaining < 0;
+
+            return (
+              <div key={category} className="flex justify-between text-sm">
+                <span>{category}</span>
+                <span>
+                  ₹{spent} / ₹{budget}{" "}
+                  <span className={over ? "text-red-500" : "text-green-600"}>
+                    ({over ? `Over by ₹${-remaining}` : `₹${remaining} left`})
+                  </span>
+                </span>
+              </div>
+            );
+          })}
         </CardContent>
       </Card>
 
