@@ -6,6 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import {
   BarChart,
   Bar,
   XAxis,
@@ -20,32 +27,70 @@ export default function TransactionTracker() {
     amount: "",
     date: "",
     description: "",
+    category: "",
   });
+  const [isEditing, setIsEditing] = useState(false);
+  const [editId, setEditId] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleCategoryChange = (value) => {
+    setForm((prev) => ({ ...prev, category: value }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.amount || !form.date || !form.description) {
+    const { amount, date, description, category } = form;
+    if (!amount || !date || !description || !category) {
       alert("All fields are required!");
       return;
     }
 
-    const newTransaction = {
-      ...form,
-      id: Date.now(),
-    };
+    if (isEditing) {
+      // Update existing transaction
+      const updatedTxns = transactions.map((tx) =>
+        tx.id === editId ? { ...form, id: editId } : tx
+      );
+      setTransactions(updatedTxns);
+      setIsEditing(false);
+      setEditId(null);
+    } else {
+      // Add new transaction
+      const newTransaction = {
+        ...form,
+        id: Date.now(),
+      };
+      setTransactions([newTransaction, ...transactions]);
+    }
 
-    setTransactions([newTransaction, ...transactions]);
-    setForm({ amount: "", date: "", description: "" });
+    setForm({ amount: "", date: "", description: "", category: "" });
+  };
+
+  const handleEdit = (tx) => {
+    setForm({
+      amount: tx.amount,
+      date: tx.date,
+      description: tx.description,
+      category: tx.category,
+    });
+    setEditId(tx.id);
+    setIsEditing(true);
+  };
+
+  const handleDelete = (id) => {
+    const confirmed = confirm(
+      "Are you sure you want to delete this transaction?"
+    );
+    if (confirmed) {
+      setTransactions(transactions.filter((tx) => tx.id !== id));
+    }
   };
 
   const getMonthlyTotals = (transactions) => {
     const grouped = {};
-
     transactions.forEach((tx) => {
       const month = new Date(tx.date).toLocaleString("default", {
         month: "short",
@@ -56,16 +101,17 @@ export default function TransactionTracker() {
       }
       grouped[month] += Number(tx.amount);
     });
-
     return Object.entries(grouped).map(([month, total]) => ({ month, total }));
   };
 
   return (
     <div className="max-w-2xl mx-auto mt-8 space-y-8">
-      {/* Add Transaction Form */}
+      {/* Add/Edit Transaction Form */}
       <Card>
         <CardContent className="p-6 space-y-4">
-          <h2 className="text-xl font-bold">Add Transaction</h2>
+          <h2 className="text-xl font-bold">
+            {isEditing ? "Edit Transaction" : "Add Transaction"}
+          </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label>Amount</Label>
@@ -96,7 +142,46 @@ export default function TransactionTracker() {
                 placeholder="e.g. Grocery shopping"
               />
             </div>
-            <Button type="submit">Add Transaction</Button>
+            <div>
+              <Label>Category</Label>
+              <Select
+                value={form.category}
+                onValueChange={handleCategoryChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Food">Food</SelectItem>
+                  <SelectItem value="Travel">Travel</SelectItem>
+                  <SelectItem value="Rent">Rent</SelectItem>
+                  <SelectItem value="Shopping">Shopping</SelectItem>
+                  <SelectItem value="Misc">Misc</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2">
+              <Button type="submit">
+                {isEditing ? "Update Transaction" : "Add Transaction"}
+              </Button>
+              {isEditing && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setForm({
+                      amount: "",
+                      date: "",
+                      description: "",
+                      category: "",
+                    });
+                  }}
+                >
+                  Cancel
+                </Button>
+              )}
+            </div>
           </form>
         </CardContent>
       </Card>
@@ -112,11 +197,32 @@ export default function TransactionTracker() {
               {transactions.map((tx) => (
                 <li
                   key={tx.id}
-                  className="border p-2 rounded-md flex justify-between text-sm"
+                  className="border p-2 rounded-md flex flex-col text-sm"
                 >
-                  <span>₹{tx.amount}</span>
-                  <span>{tx.date}</span>
-                  <span>{tx.description}</span>
+                  <div className="flex justify-between">
+                    <span>₹{tx.amount}</span>
+                    <span>{tx.date}</span>
+                  </div>
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>{tx.description}</span>
+                    <span className="italic">{tx.category}</span>
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEdit(tx)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleDelete(tx.id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
                 </li>
               ))}
             </ul>
